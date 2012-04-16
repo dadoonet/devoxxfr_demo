@@ -1,0 +1,777 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Twitter River Demo</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" type="text/css" href="css/smoothness/jquery-ui-1.8.18.custom.css">
+	<link rel="stylesheet" type="text/css" href="css/jquery.jqplot.min.css" />
+	<link rel="stylesheet" type="text/css" href="css/ui.jqgrid.css" />
+	
+	<style type="text/css" title="currentStyle">
+		div.monitorus {
+			width: 200px;
+			height: 400px;
+			position: fixed;
+			display: inline;
+			right: 0;
+			bottom: 0;
+			background-color: transparent;
+		}
+		div.logo {
+			width: 468px;
+			height: 60px;
+			position: absolute;
+			display: block;
+			right: 0;
+			top: 0;
+			background-color: transparent;
+		}
+	</style>
+
+    <!-- Load JS libraries -->
+    <script type="text/javascript" language="javascript" src="lib/jquery-1.7.1.min.js"></script>
+	<script type="text/javascript" language="javascript" src="lib/jquery.jqGrid.min.js"></script>
+	<script type="text/javascript" language="javascript" src="lib/jquery-ui-1.8.18.custom.min.js"></script>
+	<script type="text/javascript" language="javascript" src="lib/jshashtable-2.1.js"></script>
+	<script type="text/javascript" language="javascript" src="lib/jquery.numberformatter-1.2.2.jsmin.js"></script>
+	<script type="text/javascript" language="javascript" src="lib/date-fr-FR.js"></script>
+
+	<script type="text/javascript" language="javascript" src="lib/jquery.jqplot.min.js"></script>
+	<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.pieRenderer.min.js"></script>
+	<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.pointLabels.min.js"></script>
+	<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.dateAxisRenderer.min.js"></script>
+	<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.barRenderer.min.js"></script>
+	<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.categoryAxisRenderer.min.js"></script>
+	<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.ohlcRenderer.min.js"></script>
+	<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.highlighter.min.js"></script>	
+
+
+	
+    <script>
+	$.support.cors = true;
+	
+	/*
+	 * Transform a term facet collection to an array of values
+	 */
+	function termsToArray(facet) {
+		s = [];
+
+		var decalage = 0;
+		if (facet.other > 0) {
+			s[0] = ["Autres", facet.other];
+			decalage++;
+		}
+
+		for (i=0; i < facet.terms.length; i++) {
+			s[i+decalage] = [facet.terms[i].term, facet.terms[i].count];
+		}
+
+
+		return s;
+	}
+
+	/*
+	 * Transform a histodate facet collection to an array of values
+	 */
+	function histoToArray(facet) {
+		s = [];
+
+		for (i=0; i < facet.length; i++) {
+			s[i] = [new Date(facet[i].time), facet[i].count];
+		}
+
+
+		return s;
+	}
+
+	var dateHistogramTitle = function(first, last) {
+		var formatter = 'dddd, MMMM d, yyyy';
+		
+		if (dtFilterLevel == 0) formatter = 'MM/yyyy';
+		if (dtFilterLevel == 1) formatter = 'dd/MM/yyyy';
+		if (dtFilterLevel == 2) formatter = 'dd/MM/yyyy HH';
+		if (dtFilterLevel >= 3) formatter = 'dd/MM/yyyy HH:mm';
+		
+		strDateDeb = first.toString(formatter);
+		strDateFin = last.toString(formatter);
+		
+		if (dtFilterLevel == 2) {
+			strDateDeb += "h";
+			strDateFin += "h";
+		}
+
+		if (dtFilterLevel < 4)
+			strRetour = "Tweets du " + strDateDeb + " au " + strDateFin;
+		else
+			strRetour = "Tweets du " + strDateDeb;
+		
+		return strRetour;
+    }	
+	
+	function createHistogram(divname, facet, filtername) {
+		// Compute serie
+		var s1 = histoToArray(facet);
+		var title = dateHistogramTitle(new Date(facet[0].time),
+			new Date(facet[facet.length-1].time));
+
+		var tickInterval;
+		var numberTicks=facet.length+2;
+		var formatDate;
+		var min=new Date(facet[0].time);
+		var max=new Date(facet[facet.length-1].time);
+		var ecartmn = (max-min)/1000/60;
+		
+		
+		if (dtFilterLevel == 0) {
+			min.add(-1).months();
+			max.add(1).months();
+			tickInterval='1 month';
+			formatDate='%m/%Y';
+			ecartmn=ecartmn/60/24/12;
+		}
+		if (dtFilterLevel == 1) {
+			min.add(-1).days();
+			max.add(1).days();
+			tickInterval='1 day';
+			formatDate='%d/%m';
+			ecartmn=ecartmn/60/24;
+		}
+		if (dtFilterLevel == 2) {
+			min.add(-1).hours();
+			max.add(1).hours();
+			tickInterval='1 hour';
+			formatDate='%H';
+			ecartmn=ecartmn/60;
+		}
+		if (dtFilterLevel >= 3) {
+			min.add(-1).minutes();
+			max.add(1).minutes();
+			tickInterval='1 minute';
+			formatDate='%M';
+		}
+		
+		if (ecartmn != 0) {
+			barWidth = ($('#'+divname).width() - 100 )/ (ecartmn+2);
+		} else {
+			barWidth = $('#'+divname).width() - 100;
+		}
+			
+		
+		obj = $.jqplot(divname, [s1], {
+			title:title,
+			seriesDefaults:{
+				renderer:$.jqplot.BarRenderer,
+				rendererOptions: {
+					barWidth:barWidth,
+					varyBarColor:false
+				},					
+			},
+			axes: {
+				// Use a category axis on the x axis and use our custom ticks.
+				xaxis: {
+					renderer:$.jqplot.DateAxisRenderer, 
+					tickOptions:{formatString:formatDate},
+					tickInterval:tickInterval,
+					numberTicks:numberTicks,
+					min:min, 
+					max:max
+				},
+				// Pad the y axis just a little so bars can get close to, but
+				// not touch, the grid boundaries.  1.2 is the default padding.
+				yaxis: {
+					tickOptions: {formatString: '%d'}
+				}
+			},
+		   cursor: {
+			   showTooltip:true
+		   }
+		}).replot();
+
+		$('#'+divname).bind('jqplotDataClick', 
+			function (ev, seriesIndex, pointIndex, data) {
+             var date = new Date(facet[pointIndex].time);
+			 
+			 // Suivant le niveau on applique un filtre mois, jour, heure
+			dtFilterLevel++;
+
+			if (dtFilterLevel == 1) {
+				// Filtre mois / Facet jour
+				facetDate = 'day';
+				dtFilter[dtFilterLevel] = date.toString("yyyy-MM");
+				dtLabel[dtFilterLevel] = date.toString("MMMM yyyy");
+			 }
+			 if (dtFilterLevel == 2) {
+				// Filtre jour / facet heure
+				facetDate = 'hour';
+				dtFilter[dtFilterLevel] = date.toString("yyyy-MM-dd");
+				dtLabel[dtFilterLevel] = date.toString("dd MMMM yyyy");
+			 }
+			 if (dtFilterLevel == 3) {
+				// Filtre heure / facet minute
+				facetDate = 'minute';
+				dtFilter[dtFilterLevel] = date.addHours(-2).toString("yyyy-MM-ddTHH");
+				dtLabel[dtFilterLevel] = date.addHours(2).toString("dd MMMM yyyy a HH")+"h";
+			 }
+			 if (dtFilterLevel >= 4) {
+				dtFilterLevel=4;
+				// Filtre heure / facet minute
+				facetDate = 'minute';
+				dtFilter[dtFilterLevel] = date.addHours(-2).toString("yyyy-MM-ddTHH:mm");
+				dtLabel[dtFilterLevel] = date.addHours(2).toString("dd MMMM yyyy a HH:mm");
+			 }
+			removeFilter(filtername);
+			addDateFilter(filtername, dtFilter[dtFilterLevel]);
+
+			filterLegend = "#" + divname + "_filter";
+			 
+ 			 // We remove old click listeners
+ 			 $( filterLegend ).unbind('click');
+
+			 $( filterLegend )
+				.text(dtLabel[dtFilterLevel])
+				.click(function() {
+					dtFilterLevel--;
+
+					// Suivant le niveau on applique un filtre mois, jour, heure
+					if (dtFilterLevel < 0) {
+						// Aucun filtre / facet mois
+						facetDate = 'month';
+					}
+					if (dtFilterLevel == 0) {
+						// Filtre mois / Facet jour
+						facetDate = 'month';
+					}
+					if (dtFilterLevel == 1) {
+						// Filtre jour / facet heure
+						facetDate = 'day';
+					}
+					if (dtFilterLevel == 2) {
+						// Filtre heure / facet minute
+						facetDate = 'hour';
+					}
+
+					// Suppression du filtre
+					removeFilter(filtername);
+					if (dtFilterLevel > 0) {
+						$( filterLegend ).text(dtLabel[dtFilterLevel]);
+						addDateFilter(filtername, dtFilter[dtFilterLevel]);
+					} else {
+						// On bloque au niveau 0
+						dtFilterLevel = 0;
+						$( filterLegend ).text("");
+					}
+
+					batchUpdate();
+				});
+				
+			batchUpdate();
+			}
+		);
+		return obj;
+	}
+
+	function createPie(divname, title, facet, filtername) {
+		if (termsToArray(facet).length != 0) {
+			obj = jQuery.jqplot(divname, [termsToArray(facet)], {
+				title:title,
+				seriesDefaults:{
+					renderer:jQuery.jqplot.PieRenderer,
+					rendererOptions:{
+						sliceMargin: 4,
+						startAngle: 0,
+						showDataLabels: true
+					}
+				},
+				legend: { show:true, location: 'e' }
+			}).replot();
+
+			jQuery('#'+divname).bind('jqplotDataClick', 
+					function (ev, seriesIndex, pointIndex, data) {
+						if(data[0] != "Autres"){
+							filterLegend = "#" + divname + "_filter";
+							$( filterLegend )
+								.text(data[0])
+								.click(function() {
+									removeFilter(filtername);
+									filterLegend = "#" + divname + "_filter";
+									$( filterLegend ).text("");
+									// Simulate a keyup event
+									$( "#searchterm" ).trigger('keyup');
+								});
+
+							addFilter(filtername, data[0]) ;
+						}
+						
+						batchUpdate();
+					}
+			);
+
+			return obj;
+		}
+	}
+	
+	function showLoading(texte) {
+		$("#wait").text("Recherche de " + texte + " en cours").show();
+	}
+
+	function hideLoading() {
+		$("#wait").fadeOut(1000);
+	}
+
+	function compute_data() {
+		var google = $( "#searchterm" ).val();
+		var searchtype = $( "#searchtype" ).val();
+		// If user select query string without any values, we send him to
+		// match_all
+		if ((google == null || google == "") &&
+			searchtype == "query_string") {
+			searchtype = "match_all";
+			$("#searchtype").val(searchtype);
+		}
+		showLoading(google);
+		load_data(google, searchtype);
+	}
+
+	var sES = "http://es-twitter.dyndns.org/";
+
+	//
+	// JQuery START FUNCTION
+	//
+	$( function() { 
+		$.jqplot.config.enablePlugins = true;
+		
+		$( "#dialog:ui-dialog" ).dialog( "destroy" );
+
+		$( "#tabs" ).tabs();
+		$( "#refreshrate" ).val( "5 secondes");
+
+		$( "#monitorus" ).hide();
+		$( "#toggletwitter" ).change (function(event) {
+				if( $( "#toggletwitter" ).attr('checked')) {
+					$( "#monitorus" ).show();
+				} else {
+					$( "#monitorus" ).hide();
+				}
+				return true;
+			}
+		);
+		
+		$( "#searchterm" ).keyup (function(event) {
+				var google = $( "#searchterm" ).val();
+				var searchtype = $( "#searchtype" ).val();
+				// If user enter something and is in match_all mode, we send him to
+				// query_string
+				if (google != null && google != "" && searchtype == "match_all") {
+					searchtype = "query_string";
+					$("#searchtype").val(searchtype);
+				}
+				compute_data();
+				return true;
+			}
+		);
+		
+		$( "#searchtype" ).change (function(event) {
+				compute_data();
+				return true;
+			}
+		);
+		
+		$( "#esNode" ).change (function(event) {
+				sES = $( "#esNode" ).val();
+				return true;
+			}
+		);
+		
+		$( "#slider" ).slider({
+			value:5,
+			min: 1,
+			max: 59,
+			step: 1,
+			slide: function( event, ui ) {
+				$( "#refreshrate" ).val( ui.value + " secondes");
+				window.clearInterval(bacthId);
+				bacthId = window.setInterval(batchUpdate, ui.value*1000);
+			}
+		});
+		
+		// Simulate a keyup event
+		$( "#searchterm" ).trigger('keyup');
+		
+	});
+
+	var bacthId = window.setInterval(batchUpdate, 5000);
+	function batchUpdate() {
+		$( "#searchterm" ).trigger('keyup');
+	}
+	// Initialisation des filtres par défaut
+	var filters = { "match_all" : { } };
+	var es_from = 0;
+	var es_size = 10;
+	var dtFilterLevel = 0;
+	var dtFilter=new Array();;
+	var dtLabel=new Array();
+
+	var facetDate = 'month';
+	
+	function addDateFilter(cle, dt) {
+
+    	// On vérifie si and existe ou non.
+		var obj = filters.match_all;
+		if (obj != null) {
+			filters = {	"and" : [ ] };
+		}
+	
+		var i = 0;
+		for ( ; i < filters.and.length ; i++ ) {
+			for	(code in filters.and[i].range) {
+				if (code == cle) {
+					filters.and.splice(i, 1);
+					break;
+				}
+			}
+		}
+
+		var chaine = '{ "range": { "' + cle + '" : { "from" : "' + dt + '", "to" : "' + dt + '" } } }';
+		
+		filters.and.push( JSON.parse(chaine) );
+	}
+
+	function addFilter(cle, valeur) {
+		// On vérifie si and existe ou non.
+		var obj = filters.match_all;
+		if (obj != null) {
+			filters = {	"and" : [ ] };
+		}
+	
+		var i = 0;
+		for ( ; i < filters.and.length ; i++ ) {
+			for	(code in filters.and[i].term) {
+				if (code == cle) {
+					filters.and.splice(i, 1);
+					break;
+				}
+			}
+		}
+	
+		var chaine = '{ "term" : { "' + cle + '" : "' + valeur + '" } }';
+		filters.and.push( JSON.parse(chaine) );
+	}
+
+	function removeFilter(cle) {
+		// On vérifie si and existe ou non.
+		if (filters.and != null) {
+			for (var i = 0 ; i < filters.and.length ; i++ ) {
+				for	(code in filters.and[i].term) {
+					if (code == cle) {
+						filters.and.splice(i, 1);
+						break;
+					}
+				}
+			}
+
+			for (var i = 0 ; i < filters.and.length ; i++ ) {
+				for	(code in filters.and[i].range) {
+					if (code == cle) {
+						filters.and.splice(i, 1);
+						break;
+					}
+				}
+			}
+		
+			if (filters.and.length == 0) {
+				filters = { "match_all" : { } };
+			}
+		}
+	}
+
+	var query = "";
+	var result;
+	
+	var generateQuery = function(texte, type) {
+		switch(type) {
+			case "wildcard":
+				query = { "wildcard" : { "_all" : texte } };
+				break;
+			
+			case "query_string":
+				query = { "query_string" : { "query" : texte } };
+				break;
+			
+			case "text":
+				query = { "text" : { "_all" : texte } };
+				break;
+			
+			case "prefix":
+				query = { "prefix" : { "_all" : texte } };
+				break;
+			
+			default:
+				query = { "match_all" : { } };
+				
+		}
+	}
+	
+	var load_data = function(texte, searchtype) {
+			generateQuery(texte, searchtype);
+			var esCall = JSON.stringify({
+								"from" : es_from, "size" : es_size,
+								"sort" : [
+									"_score",
+									{ "created_at" : {"order" : "desc"} }
+								],
+								"query" : { 
+									"filtered" : {
+										"query" : query,
+										"filter" : filters
+									}
+								},
+
+								"facets":{
+									"text" : { "terms" : {"field" : "text", "size" : 5} },
+									"tweeters" : { "terms" : {"field" : "user.screen_name", "size" : 5} },
+									"hashtags" : { "terms" : {"field" : "hashtag.text", "size" : 5} },
+									"mention" : { "terms" : {"field" : "mention.screen_name", "size" : 5} },
+									"days" : { "date_histogram" : { "field" : "created_at", "interval" : facetDate} }
+								}
+                       }, null, 2);
+			$('#jsonin').html( "<pre>" + esCall + "</pre>" );
+
+   
+           $.ajax({   url: sES + '/devoxx/_search?pretty=true'
+                     , type: 'POST'
+                     , data : esCall
+                     , dataType : 'json'
+                     , processData: false
+                     , success: function(json, statusText, xhr) {
+							result = json;
+							hideLoading();
+                           return display_chart();
+                       }
+                     , error: function(xhr, message, error) {
+                           console.error("Error while loading data from ElasticSearch", message);
+						   hideLoading();
+                      }
+            });
+
+			
+			
+			var oTable;
+
+			var formatNumber = function(widget, data, symbol) {
+				$( widget ).text( data );
+				if (data != 0) {
+					$( widget ).formatNumber({format:"#,###" + (symbol != null ? " " + symbol : ""), locale:"fr"});
+				}
+			}
+			
+			
+            var display_chart = function() {
+
+				// Seulement si il y a des résultats :
+				if (result.hits.total == 0) {
+					$('#chart_terms').text( "" );
+					$('#chart2').text( "" );
+					$('#chart_tweeters').text( "" );
+					$('#chart_hashtags').text( "" );
+					$('#jsonout').text( "" );
+					$("#talks").jqGrid('clearGridData',true);
+					$('#talkdetails').text( "" );
+				} else {
+					createPie('chart_terms', "TOP 5 Mentions", result.facets.mention, "mention.screen_name");
+					createPie('chart_hashtags', "TOP 5 Hashtags", result.facets.hashtags, "hashtag.text");
+					createPie('chart_tweeters', "TOP 5 Tweeters", result.facets.tweeters, "user.screen_name");
+
+					createHistogram('chart_date', result.facets.days.entries, "created_at");
+					
+					$("#talks").jqGrid('clearGridData',true);
+					
+					function dateFmt (cellvalue, options, rowObject) {
+					   return  new Date(cellvalue).toString("dd/MM/yyyy HH:mm:ss");
+					}
+
+					$('#talks').jqGrid({
+						datatype: "local", 
+						height: 250, 
+						colNames:['Date', 'Tweeter', 'Tweet', 'Score'], 
+						colModel:[ 
+							{name:'_source.created_at',index:'created_at', width:150, sortable:false, formatter:dateFmt},
+							{name:'_source.user.screen_name',index:'screen_name', width:100, sortable:false},
+							{name:'_source.text',index:'text', width:550, sortable:false},
+							{name:'_score',index:'_score', width:100, align:"right", sortable:false,formatter:'number'}
+						], 
+						multiselect: false, 
+						caption: "Tweets",
+
+						onSelectRow: function(id){
+							$( '#talkdetails' ).html( "<pre>" + JSON.stringify(result.hits.hits[id-1], null, 2) + "</pre>");
+							$( "#dialog-message" ).dialog({
+								modal: true,
+								minWidth: 800,
+								minHeight: 600,
+								buttons: {
+									Ok: function() {
+										$( this ).dialog( "close" );
+									}
+								},
+								title: "Tweet de " +
+									result.hits.hits[id-1]._source.user.name + " du " + 
+									new Date(result.hits.hits[id-1]._source.created_at).toString("dd/MM/yyyy HH:mm:ss")
+							});
+
+						}
+
+					});
+					jQuery("#talks").jqGrid('navGrid','#pjmap',{edit:false,add:false,del:false});
+						
+					for(var i=0;i<=result.hits.hits.length;i++) $("#talks").jqGrid('addRowData',i+1,result.hits.hits[i]); 
+					
+				}
+
+				formatNumber( '#stats_nb', result.hits.total );
+				$('#stats_nb_titre').text( ' éléments trouvés' );
+				$('#stats_took_debut').text( 'en ' );
+				formatNumber( '#stats_took', result.took, 'ms' );
+				
+				$('#jsonout').html( "<pre>" + JSON.stringify(result, null, 2) + "</pre>");
+			};
+        };
+    </script>
+</head>
+<body>
+	<form action="#">
+		<input type="text" id="searchterm" size="75" value="">
+		<select id="searchtype">
+			<option value="match_all" selected>Match All</option>
+			<option value="wildcard">Wildcard</option>
+			<option value="query_string">Query String</option>
+			<option value="text">Text</option>
+			<option value="prefix">Prefix</option>
+		</select>
+		<span id="wait"></span>
+	</form>
+	
+	<br>
+	<div id="stats_nb" style="display:inline"></div>
+	<div id="stats_nb_titre" style="display:inline"></div>
+	<div id="stats_took_debut" style="display:inline"></div>
+	<div id="stats_took" style="display:inline"></div>
+
+
+
+<div id="tabs">
+	<ul>
+		<li><a href="#tabs-1">Résultats</a></li>
+		<li><a href="#tabs-2">JSon</a></li>
+		<li><a href="#tabs-3">Options</a></li>
+	</ul>
+	<div id="tabs-1">
+		<table width="100%">
+			<tr>
+				<td colspan=3><div id="chart_date" style="height:300px;width:900px; "></div></td>
+				<td width="25%" rowspan=4>&nbsp;</td>
+			</tr>
+			<tr>
+				<td colspan=3><div id="chart_date_filter"></div></td>
+			</tr>
+			<tr id="charts">
+				<td width="25%"><div id="chart_terms" style="height:300px; width:300px;"></div></td>
+				<td width="25%"><div id="chart_hashtags" style="height:300px; width:300px;"></div></td>
+				<td width="25%"><div id="chart_tweeters" style="height:300px; width:300px;"></div></td>
+
+			</tr>
+			<tr>
+				<td><div id="chart_terms_filter"></div></td>
+				<td><div id="chart_hashtags_filter"></div></td>
+				<td><div id="chart_tweeters_filter"></div></td>
+			</tr>
+			<tr>
+				<td colspan="4">
+					<table id="talks"></table>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div id="tabs-2">
+		<table width="100%">
+			<tr id="json" valign="top">
+				<td width="40%" bgcolor="#F0F0F0"><div id="jsonin"></div></td>
+				<td><div id="jsonout"></div></td>
+			</tr>
+		</table>
+	</div>
+	<div id="tabs-3">
+		<p>
+			<select id="esNode">
+				<option value="http://es-twitter.dyndns.org/" selected>Node 1</option>
+				<option value="http://es2-twitter.dyndns.org/">Node 2</option>
+				<option value="http://localhost:9200/">Localhost</option>
+			</select>
+		</p>
+
+		<p>
+			<label for="refreshrate">Mise à jour toutes les :</label>
+			<input type="text" id="refreshrate" style="border:0; color:#f6931f; font-weight:bold;" readonly />
+		</p>
+		<div id="slider"></div>
+		<p>
+		Cheat codes ;-) : 
+		<ul>
+			<li>+user.screen_name:dadoonet
+			<li>"devoxxfr dadoonet"~5
+		</ul>
+		</p>
+		<p>
+			<label for="toggletwitter">Show twitter box :</label>
+			<input type="checkbox" id="toggletwitter" />
+		</p>
+	</div>
+
+</div>
+	
+		
+<div id="devoxx" class="logo">
+<a href="http://www.devoxx.fr"><img src="http://www.devoxx.fr/download/attachments/5342010/465x60_anime.gif?version=2&modificationDate=1323625564000"></a>
+</div>
+
+<div id="monitorus" class="monitorus">
+<!--a href='http://monitor.us'><img src='http://images.monitor.us/monitorus96x42-blue1.png' title='Monitor.us - Free website, server & network monitoring tool' border=0 /></a-->
+		<script charset="utf-8" src="http://widgets.twimg.com/j/2/widget.js"></script>
+		<script>
+		new TWTR.Widget({
+		  version: 2,
+		  type: 'search',
+		  search: '@dadoonet',
+		  interval: 30000,
+		  title: 'Follow me @dadoonet',
+		  subject: 'Devoxx Twitter Demo',
+		  width: 200,
+		  height: 300,
+		  theme: {
+			shell: {
+			  background: '#8ec1da',
+			  color: '#ffffff'
+			},
+			tweets: {
+			  background: '#ffffff',
+			  color: '#444444',
+			  links: '#1985b5'
+			}
+		  },
+		  features: {
+			scrollbar: false,
+			loop: true,
+			live: true,
+			behavior: 'default'
+		  }
+		}).render().start();
+		</script>
+</div>
+
+
+		
+<div id="dialog-message" title="Tweet detail">
+	<div id="talkdetails"></div>
+</div>	
+
+</body>
+</html>
