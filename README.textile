@@ -3,4 +3,88 @@ h1. Elasticsearch Twitter Demo for Devoxx France
 Welcome to the Twitter Demo for Devoxx France 
 
 
-More instructions to come later... Keep tuned.
+h2. Quickstart
+
+# Install Elasticsearch
+# Install Twitter River Plugin
+# Launch Elasticsearch
+# Create the river
+# Use the JQuery application to search
+
+
+h2. Step by step guide
+
+h3. Install Elasticsearch
+
+Very easy : 
+
+# Download "Elasticsearch 0.19.2":https://github.com/downloads/elasticsearch/elasticsearch/elasticsearch-0.19.2.zip
+# Unzip it
+
+
+h3. Install Twitter River Plugin
+
+Just do :
+
+<pre>
+<code>
+bin/plugin -install elasticsearch/elasticsearch-river-twitter/1.1.0
+</code>
+</pre>
+
+
+h3. Launch Elasticsearch
+
+Just do :
+
+<pre>
+<code>
+bin/elasticsearch
+</code>
+</pre>
+
+
+h3. Create the river
+
+Simply <code>curl</code> the river.
+Note that you will have to provide your twitter account credentials.
+
+You can create a "Twitter Application":https://dev.twitter.com/apps and then read your credentials to replace them below.
+
+<pre>
+<code>
+curl -XPUT http://localhost:9200/_river/devoxx/_meta -d '{
+	"type" : "twitter",
+	"twitter" : {
+		"oauth" : {
+			"consumerKey" : "yourConsumerKey",
+	        "consumerSecret" : "yourConsumerSecret",
+		    "accessToken" : "yourAccessToken",
+        	"accessTokenSecret" : "yourAccessTokenSecret"
+		},
+		"filter" : {
+			"tracks" : ["devoxx", "devoxxfr"],
+			"follow" : [396502424]
+		}
+	},
+	"index" : {
+		"index" : "devoxx",
+		"type" : "tweet",
+		"bulk_size" : 1
+	}
+}'
+</code>
+</pre>
+
+This river will listen to the "Twitter Hose":http://dev.twitter.com/pages/streaming_api and index everything that contains the terms devoxx, devoxxfr and follow every tweet by @devoxxfr account (396502424).
+
+
+h3. Launch the demo
+
+# Download "Devoxx Demo":https://github.com/dadoonet/devoxxfr_demo/zipball/master
+# Unzip it
+# Launch index.html in Chrome and wait for tweets !
+
+
+
+
