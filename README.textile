@@ -48,9 +48,9 @@ You can create a "Twitter Application":https://dev.twitter.com/apps and then rea
 	"twitter" : {
 		"oauth" : {
 			"consumerKey" : "yourConsumerKey",
-	        "consumerSecret" : "yourConsumerSecret",
-		    "accessToken" : "yourAccessToken",
-        	"accessTokenSecret" : "yourAccessTokenSecret"
+			"consumerSecret" : "yourConsumerSecret",
+			"accessToken" : "yourAccessToken",
+			"accessTokenSecret" : "yourAccessTokenSecret"
 		},
 		"filter" : {
 			"tracks" : ["devoxx", "devoxxfr"],
