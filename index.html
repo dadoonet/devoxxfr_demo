@@ -156,7 +156,7 @@
 			barWidth = $('#'+divname).width() - 100;
 		}
 			
-		
+		// $(divname).remove();
 		obj = $.jqplot(divname, [s1], {
 			title:title,
 			seriesDefaults:{
@@ -185,7 +185,8 @@
 		   cursor: {
 			   showTooltip:true
 		   }
-		}).replot();
+		});
+		obj.replot();
 
 		$('#'+divname).bind('jqplotDataClick', 
 			function (ev, seriesIndex, pointIndex, data) {
@@ -272,10 +273,11 @@
 
 	function createPie(divname, title, facet, filtername) {
 		if (termsToArray(facet).length != 0) {
-			obj = jQuery.jqplot(divname, [termsToArray(facet)], {
+			$(divname).empty();
+			obj = $.jqplot(divname, [termsToArray(facet)], {
 				title:title,
 				seriesDefaults:{
-					renderer:jQuery.jqplot.PieRenderer,
+					renderer:$.jqplot.PieRenderer,
 					rendererOptions:{
 						sliceMargin: 4,
 						startAngle: 0,
@@ -283,7 +285,8 @@
 					}
 				},
 				legend: { show:true, location: 'e' }
-			}).replot();
+			});
+			obj.replot();
 
 			jQuery('#'+divname).bind('jqplotDataClick', 
 					function (ev, seriesIndex, pointIndex, data) {
@@ -305,7 +308,6 @@
 						batchUpdate();
 					}
 			);
-
 			return obj;
 		}
 	}
@@ -510,6 +512,11 @@
 				
 		}
 	}
+
+	var jqpChart_terms;
+	var jqpChart_hashtags;
+	var jqpChart_tweeters;
+	var jqpChart_date;
 	
 	var load_data = function(texte, searchtype) {
 			generateQuery(texte, searchtype);
@@ -563,8 +570,7 @@
 					$( widget ).formatNumber({format:"#,###" + (symbol != null ? " " + symbol : ""), locale:"fr"});
 				}
 			}
-			
-			
+
             var display_chart = function() {
 
 				// Seulement si il y a des résultats :
@@ -576,12 +582,34 @@
 					$('#jsonout').text( "" );
 					$("#talks").jqGrid('clearGridData',true);
 					$('#talkdetails').text( "" );
+					if (jqpChart_terms != null) {
+						jqpChart_terms.destroy();
+					}
+					if (jqpChart_hashtags != null) {
+						jqpChart_hashtags.destroy();
+					}
+					if (jqpChart_tweeters != null) {
+						jqpChart_tweeters.destroy();
+					}
 				} else {
-					createPie('chart_terms', "TOP 5 Mentions", result.facets.mention, "mention.screen_name");
-					createPie('chart_hashtags', "TOP 5 Hashtags", result.facets.hashtags, "hashtag.text");
-					createPie('chart_tweeters', "TOP 5 Tweeters", result.facets.tweeters, "user.screen_name");
+					if (jqpChart_terms != null) {
+						jqpChart_terms.destroy();
+					}
+					if (jqpChart_hashtags != null) {
+						jqpChart_hashtags.destroy();
+					}
+					if (jqpChart_tweeters != null) {
+						jqpChart_tweeters.destroy();
+					}
+					if (jqpChart_date != null) {
+						jqpChart_date.destroy();
+					}
+					
+					jqpChart_terms = createPie('chart_terms', "TOP 5 Mentions", result.facets.mention, "mention.screen_name");
+					jqpChart_hashtags = createPie('chart_hashtags', "TOP 5 Hashtags", result.facets.hashtags, "hashtag.text");
+					jqpChart_tweeters = createPie('chart_tweeters', "TOP 5 Tweeters", result.facets.tweeters, "user.screen_name");
 
-					createHistogram('chart_date', result.facets.days.entries, "created_at");
+					jqpChart_date = createHistogram('chart_date', result.facets.days.entries, "created_at");
 					
 					$("#talks").jqGrid('clearGridData',true);
 					

@@ -74,5 +74,8 @@ h3. Launch the demo
 # Launch index.html in Chrome and wait for tweets !
 
 
+h1. Thanks
+
+Thanks to "François Descamps":https://twitter.com/#!/descampsf for his help
 
 
