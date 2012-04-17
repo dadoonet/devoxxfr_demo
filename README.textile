@@ -26,22 +26,14 @@ h3. Install Twitter River Plugin
 
 Just do :
 
-<pre>
-<code>
-bin/plugin -install elasticsearch/elasticsearch-river-twitter/1.1.0
-</code>
-</pre>
+<pre><code>bin/plugin -install elasticsearch/elasticsearch-river-twitter/1.1.0</code></pre>
 
 
 h3. Launch Elasticsearch
 
 Just do :
 
-<pre>
-<code>
-bin/elasticsearch
-</code>
-</pre>
+<pre><code>bin/elasticsearch</code></pre>
 
 
 h3. Create the river
@@ -51,9 +43,7 @@ Note that you will have to provide your twitter account credentials.
 
 You can create a "Twitter Application":https://dev.twitter.com/apps and then read your credentials to replace them below.
 
-<pre>
-<code>
-curl -XPUT http://localhost:9200/_river/devoxx/_meta -d '{
+<pre><code>curl -XPUT http://localhost:9200/_river/devoxx/_meta -d '{
 	"type" : "twitter",
 	"twitter" : {
 		"oauth" : {
@@ -72,9 +62,7 @@ curl -XPUT http://localhost:9200/_river/devoxx/_meta -d '{
 		"type" : "tweet",
 		"bulk_size" : 1
 	}
-}'
-</code>
-</pre>
+}'</code></pre>
 
 This river will listen to the "Twitter Hose":http://dev.twitter.com/pages/streaming_api and index everything that contains the terms devoxx, devoxxfr and follow every tweet by @devoxxfr account (396502424).
 
