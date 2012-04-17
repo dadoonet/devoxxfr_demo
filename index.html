@@ -347,17 +347,6 @@
 		$( "#tabs" ).tabs();
 		$( "#refreshrate" ).val( "5 secondes");
 
-		$( "#monitorus" ).hide();
-		$( "#toggletwitter" ).change (function(event) {
-				if( $( "#toggletwitter" ).attr('checked')) {
-					$( "#monitorus" ).show();
-				} else {
-					$( "#monitorus" ).hide();
-				}
-				return true;
-			}
-		);
-		
 		$( "#searchterm" ).keyup (function(event) {
 				var google = $( "#searchterm" ).val();
 				var searchtype = $( "#searchtype" ).val();
@@ -748,10 +737,6 @@
 			<li>"devoxxfr dadoonet"~5
 		</ul>
 		</p>
-		<p>
-			<label for="toggletwitter">Show twitter box :</label>
-			<input type="checkbox" id="toggletwitter" />
-		</p>
 	</div>
 
 </div>
@@ -760,42 +745,6 @@
 <div id="devoxx" class="logo">
 <a href="http://www.devoxx.fr"><img src="http://www.devoxx.fr/download/attachments/5342010/465x60_anime.gif?version=2&modificationDate=1323625564000"></a>
 </div>
-
-<div id="monitorus" class="monitorus">
-<!--a href='http://monitor.us'><img src='http://images.monitor.us/monitorus96x42-blue1.png' title='Monitor.us - Free website, server & network monitoring tool' border=0 /></a-->
-		<script charset="utf-8" src="http://widgets.twimg.com/j/2/widget.js"></script>
-		<script>
-		new TWTR.Widget({
-		  version: 2,
-		  type: 'search',
-		  search: '@dadoonet',
-		  interval: 30000,
-		  title: 'Follow me @dadoonet',
-		  subject: 'Devoxx Twitter Demo',
-		  width: 200,
-		  height: 300,
-		  theme: {
-			shell: {
-			  background: '#8ec1da',
-			  color: '#ffffff'
-			},
-			tweets: {
-			  background: '#ffffff',
-			  color: '#444444',
-			  links: '#1985b5'
-			}
-		  },
-		  features: {
-			scrollbar: false,
-			loop: true,
-			live: true,
-			behavior: 'default'
-		  }
-		}).render().start();
-		</script>
-</div>
-
-
 		
 <div id="dialog-message" title="Tweet detail">
 	<div id="talkdetails"></div>
