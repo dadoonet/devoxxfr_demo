@@ -74,8 +74,35 @@ h3. Launch the demo
 # Launch index.html in Chrome and wait for tweets !
 
 
+h1. Restore data from Devoxx France
+
+Here is the full script to get a fully functionnal node with more than 10k tweets about Devoxx France.
+
+Open a terminal and launch the following commands:
+
+<pre><code>mkdir demo
+cd demo
+curl -OL -k http://github.com/dadoonet/devoxxfr_demo/zipball/master
+unzip master
+rm master
+mv dadoonet-devoxxfr_demo-* devoxxfr_demo
+curl -OL -k http://github.com/downloads/elasticsearch/elasticsearch/elasticsearch-0.19.3.zip
+unzip elasticsearch-0.19.3.zip
+rm elasticsearch-0.19.3.zip
+cd elasticsearch-0.19.3
+curl -OL -k http://github.com/downloads/dadoonet/devoxxfr_demo/data-devoxxfr.zip
+unzip data-devoxxfr.zip
+rm data-devoxxfr.zip
+bin/elasticsearch -f</code></pre>
+
+Just open demo/devoxxfr_demo/index.html in your browser and you should see the Elasticsearch Twitter Demo for DevoxxFR.
+
+Hit CTRL+C in your terminal when you want to stop the demo.
+
+Nota : this script does not creat the river to fetch new tweets. Refer to the first section if you want to do it.
+
 h1. Thanks
 
-Thanks to "François Descamps":https://twitter.com/#!/descampsf for his help
+Thanks to "Franï¿½ois Descamps":https://twitter.com/#!/descampsf for his help
 
 
