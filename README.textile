@@ -80,19 +80,28 @@ Here is the full script to get a fully functionnal node with more than 10k tweet
 
 Open a terminal and launch the following commands:
 
-<pre><code>mkdir demo
+<pre><code># Create demo dir 
+mkdir demo
 cd demo
+
+# Get jQuery Demo pages
 curl -OL -k http://github.com/dadoonet/devoxxfr_demo/zipball/master
 unzip master
 rm master
 mv dadoonet-devoxxfr_demo-* devoxxfr_demo
+
+# Get Elaticsearch 0.19.3
 curl -OL -k http://github.com/downloads/elasticsearch/elasticsearch/elasticsearch-0.19.3.zip
 unzip elasticsearch-0.19.3.zip
 rm elasticsearch-0.19.3.zip
 cd elasticsearch-0.19.3
+
+# Get Data for DevoxxFR (more than 10k tweets)
 curl -OL -k http://github.com/downloads/dadoonet/devoxxfr_demo/data-devoxxfr.zip
 unzip data-devoxxfr.zip
 rm data-devoxxfr.zip
+
+# Launch Elasticsearch (foreground)
 bin/elasticsearch -f</code></pre>
 
 Just open demo/devoxxfr_demo/index.html in your browser and you should see the Elasticsearch Twitter Demo for DevoxxFR.
@@ -103,6 +112,6 @@ Nota : this script does not creat the river to fetch new tweets. Refer to the fi
 
 h1. Thanks
 
-Thanks to "Fran�ois Descamps":https://twitter.com/#!/descampsf for his help
+Thanks to "François Descamps":https://twitter.com/#!/descampsf for his help
 
 
