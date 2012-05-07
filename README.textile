@@ -76,7 +76,7 @@ h3. Launch the demo
 
 h1. Restore data from Devoxx France
 
-Here is the full script to get a fully functionnal node with more than 10k tweets about Devoxx France.
+Here is the full script to get a fully functional node with more than 10k tweets about Devoxx France.
 
 Open a terminal and launch the following commands:
 
@@ -108,7 +108,7 @@ Just open demo/devoxxfr_demo/index.html in your browser and you should see the E
 
 Hit CTRL+C in your terminal when you want to stop the demo.
 
-Nota : this script does not creat the river to fetch new tweets. Refer to the first section if you want to do it.
+Nota : this script does not create the river to fetch new tweets. Refer to the first section if you want to do it.
 
 h1. Thanks
 
