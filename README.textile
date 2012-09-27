@@ -110,6 +110,22 @@ Hit CTRL+C in your terminal when you want to stop the demo.
 
 Nota : this script does not create the river to fetch new tweets. Refer to the first section if you want to do it.
 
+h1. Even easier: grab a full packaged demo
+
+# Download "Offline Devoxx France 2012 Demo":https://github.com/downloads/dadoonet/devoxxfr_demo/offline_demo.zip
+# Unzip it
+# Launch bin/elasticsearch -f
+# Open "Offline Devoxx France 2012 Demo":http://localhost:9200/_plugin/demo/
+
+You can also have a look at some cool plugins:
+# "MOBZ Head":http://localhost:9200/_plugin/head/
+# "Bigdesk":http://localhost:9200/_plugin/bigdesk/
+# "Paramedic":http://localhost:9200/_plugin/paramedic/
+
+Enjoy!
+
+> Cool! Bonsai cool!
+
 h1. Thanks
 
 Thanks to "François Descamps":https://twitter.com/#!/descampsf for his help
