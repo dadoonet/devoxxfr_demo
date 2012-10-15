@@ -387,7 +387,10 @@
 
 	var bacthId = window.setInterval(batchUpdate, 5000);
 	function batchUpdate() {
-		$( "#searchterm" ).trigger('keyup');
+        // Only if Resultats is the tab shown
+        if($('#tabs li:first').hasClass('active')){
+    		$( "#searchterm" ).trigger('keyup');        
+        }
 	}
 	// Initialisation des filtres par défaut
 	var filters = { "match_all" : { } };
