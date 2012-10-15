@@ -38,7 +38,7 @@
 <script type="text/javascript" language="javascript" src="lib/plugins/jqplot.highlighter.min.js"></script>	
 
     <script>
-$.support.cors = true;
+    $.support.cors = true;
 
 	/*
 	 * Transform a term facet collection to an array of values
@@ -594,12 +594,22 @@ $.support.cors = true;
 					    for(var i=0; i <= result.hits.hits.length; i++){
                             var hit = result.hits.hits[i];
                             if(hit){
-                                var row = '<tr><td>' + dateFmt(hit._source.created_at) + '</td>' 
+                                var rowHtml = '<tr detail-num=' + i + ' style="cursor:pointer;">'
+                                            + '<td>' + dateFmt(hit._source.created_at) + '</td>' 
                                             + '<td>' + hit._source.user.screen_name + '</td>'
                                             + '<td>' + hit._source.text + '</td>'
                                             + '<td>' + hit._score + '</td></tr>'
 
-                                $("#tweets").find('tbody').append(row);                            
+                                var row = $(rowHtml);
+                                row.click(function() {
+                                    var detailNum = $(this).attr("detail-num");
+                                    if(detailNum) {
+                                        $('#detail .modal-body').html("<pre>" + JSON.stringify(result.hits.hits[detailNum], null, 2) + "</pre>");
+                                        $('#detail').modal('show');
+                                    }
+                                });
+
+                                $("#tweets").find('tbody').append(row);
                             }
                         }
                     }
@@ -746,6 +756,15 @@ $.support.cors = true;
                 </form>
             </div>
 
+            <!-- Detail of a Tweet -->
+            <div id="detail" class="modal hide fade">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h3>D&eacute;tail du tweet</h3>
+                </div>
+                <div class="modal-body">
+                </div>
+            </div>
         </div>
 
     </div>
