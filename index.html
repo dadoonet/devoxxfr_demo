@@ -1,55 +1,45 @@
-﻿<!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="fr">
 <head>
     <title>Twitter River Demo</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<link rel="stylesheet" type="text/css" href="css/smoothness/jquery-ui-1.8.18.custom.css">
-	<link rel="stylesheet" type="text/css" href="css/jquery.jqplot.min.css" />
-	<link rel="stylesheet" type="text/css" href="css/ui.jqgrid.css" />
-	
-	<style type="text/css" title="currentStyle">
-		div.monitorus {
-			width: 200px;
-			height: 400px;
-			position: fixed;
-			display: inline;
-			right: 0;
-			bottom: 0;
-			background-color: transparent;
-		}
-		div.logo {
-			width: 468px;
-			height: 60px;
-			position: absolute;
-			display: block;
-			right: 0;
-			top: 0;
-			background-color: transparent;
-		}
-	</style>
+    <meta name="description" content="A demo page for ElasticSearch Twitter River, please check https://github.com/dadoonet/devoxxfr_demo for more information.">
+    <meta name="author" content="David Pilato (david@pilato.fr), Tanguy Leroux (tlrx.dev@gmail.com)">
+
+    <!-- CSS -->
+    <link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            padding-top: 60px;
+        }
+    </style>
 
     <!-- Load JS libraries -->
     <script type="text/javascript" language="javascript" src="lib/jquery-1.7.1.min.js"></script>
-	<script type="text/javascript" language="javascript" src="lib/jquery.jqGrid.min.js"></script>
-	<script type="text/javascript" language="javascript" src="lib/jquery-ui-1.8.18.custom.min.js"></script>
-	<script type="text/javascript" language="javascript" src="lib/jshashtable-2.1.js"></script>
-	<script type="text/javascript" language="javascript" src="lib/jquery.numberformatter-1.2.2.jsmin.js"></script>
-	<script type="text/javascript" language="javascript" src="lib/date-fr-FR.js"></script>
-
-	<script type="text/javascript" language="javascript" src="lib/jquery.jqplot.min.js"></script>
-	<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.pieRenderer.min.js"></script>
-	<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.pointLabels.min.js"></script>
-	<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.dateAxisRenderer.min.js"></script>
-	<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.barRenderer.min.js"></script>
-	<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.categoryAxisRenderer.min.js"></script>
-	<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.ohlcRenderer.min.js"></script>
-	<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.highlighter.min.js"></script>	
+    <script type="text/javascript" language="javascript" src="lib/bootstrap/js/bootstrap.min.js"></script>
 
 
-	
+
+<link rel="stylesheet" type="text/css" href="css/jquery.jqplot.min.css" />
+<link rel="stylesheet" type="text/css" href="css/ui.jqgrid.css" />
+<script type="text/javascript" language="javascript" src="lib/jquery.jqGrid.min.js"></script>
+<script type="text/javascript" language="javascript" src="lib/jquery-ui-1.8.18.custom.min.js"></script>
+<script type="text/javascript" language="javascript" src="lib/jshashtable-2.1.js"></script>
+<script type="text/javascript" language="javascript" src="lib/jquery.numberformatter-1.2.2.jsmin.js"></script>
+<script type="text/javascript" language="javascript" src="lib/date-fr-FR.js"></script>
+
+<script type="text/javascript" language="javascript" src="lib/jquery.jqplot.min.js"></script>
+<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.pieRenderer.min.js"></script>
+<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.pointLabels.min.js"></script>
+<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.dateAxisRenderer.min.js"></script>
+<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.barRenderer.min.js"></script>
+<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.categoryAxisRenderer.min.js"></script>
+<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.ohlcRenderer.min.js"></script>
+<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.highlighter.min.js"></script>	
+
     <script>
-	$.support.cors = true;
-	
+$.support.cors = true;
+
 	/*
 	 * Transform a term facet collection to an array of values
 	 */
@@ -86,15 +76,15 @@
 
 	var dateHistogramTitle = function(first, last) {
 		var formatter = 'dddd, MMMM d, yyyy';
-		
+
 		if (dtFilterLevel == 0) formatter = 'MM/yyyy';
 		if (dtFilterLevel == 1) formatter = 'dd/MM/yyyy';
 		if (dtFilterLevel == 2) formatter = 'dd/MM/yyyy HH';
 		if (dtFilterLevel >= 3) formatter = 'dd/MM/yyyy HH:mm';
-		
+
 		strDateDeb = first.toString(formatter);
 		strDateFin = last.toString(formatter);
-		
+
 		if (dtFilterLevel == 2) {
 			strDateDeb += "h";
 			strDateFin += "h";
@@ -104,10 +94,10 @@
 			strRetour = "Tweets du " + strDateDeb + " au " + strDateFin;
 		else
 			strRetour = "Tweets du " + strDateDeb;
-		
+
 		return strRetour;
     }	
-	
+
 	function createHistogram(divname, facet, filtername) {
 		// Compute serie
 		var s1 = histoToArray(facet);
@@ -120,8 +110,8 @@
 		var min=new Date(facet[0].time);
 		var max=new Date(facet[facet.length-1].time);
 		var ecartmn = (max-min)/1000/60;
-		
-		
+
+
 		if (dtFilterLevel == 0) {
 			min.add(-1).months();
 			max.add(1).months();
@@ -149,13 +139,13 @@
 			tickInterval='1 minute';
 			formatDate='%M';
 		}
-		
+
 		if (ecartmn != 0) {
 			barWidth = ($('#'+divname).width() - 100 )/ (ecartmn+2);
 		} else {
 			barWidth = $('#'+divname).width() - 100;
 		}
-			
+
 		// $(divname).remove();
 		obj = $.jqplot(divname, [s1], {
 			title:title,
@@ -191,7 +181,7 @@
 		$('#'+divname).bind('jqplotDataClick', 
 			function (ev, seriesIndex, pointIndex, data) {
              var date = new Date(facet[pointIndex].time);
-			 
+
 			 // Suivant le niveau on applique un filtre mois, jour, heure
 			dtFilterLevel++;
 
@@ -224,7 +214,7 @@
 			addDateFilter(filtername, dtFilter[dtFilterLevel]);
 
 			filterLegend = "#" + divname + "_filter";
-			 
+
  			 // We remove old click listeners
  			 $( filterLegend ).unbind('click');
 
@@ -264,7 +254,7 @@
 
 					batchUpdate();
 				});
-				
+
 			batchUpdate();
 			}
 		);
@@ -304,14 +294,14 @@
 
 							addFilter(filtername, data[0]) ;
 						}
-						
+
 						batchUpdate();
 					}
 			);
 			return obj;
 		}
 	}
-	
+
 	function showLoading(texte) {
 		$("#wait").text("Recherche de " + texte + " en cours").show();
 	}
@@ -341,7 +331,7 @@
 	//
 	$( function() { 
 		$.jqplot.config.enablePlugins = true;
-		
+
 		$( "#dialog:ui-dialog" ).dialog( "destroy" );
 
 		$( "#tabs" ).tabs();
@@ -360,19 +350,19 @@
 				return true;
 			}
 		);
-		
+
 		$( "#searchtype" ).change (function(event) {
 				compute_data();
 				return true;
 			}
 		);
-		
+
 		$( "#esNode" ).change (function(event) {
 				sES = $( "#esNode" ).val();
 				return true;
 			}
 		);
-		
+
 		$( "#slider" ).slider({
 			value:5,
 			min: 1,
@@ -384,10 +374,10 @@
 				bacthId = window.setInterval(batchUpdate, ui.value*1000);
 			}
 		});
-		
+
 		// Simulate a keyup event
 		$( "#searchterm" ).trigger('keyup');
-		
+
 	});
 
 	var bacthId = window.setInterval(batchUpdate, 5000);
@@ -403,7 +393,7 @@
 	var dtLabel=new Array();
 
 	var facetDate = 'month';
-	
+
 	function addDateFilter(cle, dt) {
 
     	// On vérifie si and existe ou non.
@@ -411,7 +401,7 @@
 		if (obj != null) {
 			filters = {	"and" : [ ] };
 		}
-	
+
 		var i = 0;
 		for ( ; i < filters.and.length ; i++ ) {
 			for	(code in filters.and[i].range) {
@@ -423,7 +413,7 @@
 		}
 
 		var chaine = '{ "range": { "' + cle + '" : { "from" : "' + dt + '", "to" : "' + dt + '" } } }';
-		
+
 		filters.and.push( JSON.parse(chaine) );
 	}
 
@@ -433,7 +423,7 @@
 		if (obj != null) {
 			filters = {	"and" : [ ] };
 		}
-	
+
 		var i = 0;
 		for ( ; i < filters.and.length ; i++ ) {
 			for	(code in filters.and[i].term) {
@@ -443,7 +433,7 @@
 				}
 			}
 		}
-	
+
 		var chaine = '{ "term" : { "' + cle + '" : "' + valeur + '" } }';
 		filters.and.push( JSON.parse(chaine) );
 	}
@@ -468,7 +458,7 @@
 					}
 				}
 			}
-		
+
 			if (filters.and.length == 0) {
 				filters = { "match_all" : { } };
 			}
@@ -477,28 +467,28 @@
 
 	var query = "";
 	var result;
-	
+
 	var generateQuery = function(texte, type) {
 		switch(type) {
 			case "wildcard":
 				query = { "wildcard" : { "_all" : texte } };
 				break;
-			
+
 			case "query_string":
 				query = { "query_string" : { "query" : texte } };
 				break;
-			
+
 			case "text":
 				query = { "text" : { "_all" : texte } };
 				break;
-			
+
 			case "prefix":
 				query = { "prefix" : { "_all" : texte } };
 				break;
-			
+
 			default:
 				query = { "match_all" : { } };
-				
+
 		}
 	}
 
@@ -506,7 +496,7 @@
 	var jqpChart_hashtags;
 	var jqpChart_tweeters;
 	var jqpChart_date;
-	
+
 	var load_data = function(texte, searchtype) {
 			generateQuery(texte, searchtype);
 			var esCall = JSON.stringify({
@@ -549,8 +539,8 @@
                       }
             });
 
-			
-			
+
+
 			var oTable;
 
 			var formatNumber = function(widget, data, symbol) {
@@ -593,15 +583,15 @@
 					if (jqpChart_date != null) {
 						jqpChart_date.destroy();
 					}
-					
+
 					jqpChart_terms = createPie('chart_terms', "TOP 5 Mentions", result.facets.mention, "mention.screen_name");
 					jqpChart_hashtags = createPie('chart_hashtags', "TOP 5 Hashtags", result.facets.hashtags, "hashtag.text");
 					jqpChart_tweeters = createPie('chart_tweeters', "TOP 5 Tweeters", result.facets.tweeters, "user.screen_name");
 
 					jqpChart_date = createHistogram('chart_date', result.facets.days.entries, "created_at");
-					
+
 					$("#talks").jqGrid('clearGridData',true);
-					
+
 					function dateFmt (cellvalue, options, rowObject) {
 					   return  new Date(cellvalue).toString("dd/MM/yyyy HH:mm:ss");
 					}
@@ -639,116 +629,142 @@
 
 					});
 					jQuery("#talks").jqGrid('navGrid','#pjmap',{edit:false,add:false,del:false});
-						
+
 					for(var i=0;i<=result.hits.hits.length;i++) $("#talks").jqGrid('addRowData',i+1,result.hits.hits[i]); 
-					
+
 				}
 
 				formatNumber( '#stats_nb', result.hits.total );
 				$('#stats_nb_titre').text( ' éléments trouvés' );
 				$('#stats_took_debut').text( 'en ' );
 				formatNumber( '#stats_took', result.took, 'ms' );
-				
+
 				$('#jsonout').html( "<pre>" + JSON.stringify(result, null, 2) + "</pre>");
 			};
         };
-    </script>
+	</script>
+
 </head>
 <body>
-	<form action="#">
-		<input type="text" id="searchterm" size="75" value="">
-		<select id="searchtype">
-			<option value="match_all" selected>Match All</option>
-			<option value="wildcard">Wildcard</option>
-			<option value="query_string">Query String</option>
-			<option value="text">Text</option>
-			<option value="prefix">Prefix</option>
-		</select>
-		<span id="wait"></span>
-	</form>
+    <!-- Page Header -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container">
+                <a class="brand" href="#">Twitter River Demo</a>
+                <div class="nav-collapse collapse">
+                    <form class="navbar-form pull-right">
+                        <input class="span3" type="text" id="searchterm" placeholder="Recherche...">
+                        <select id="searchtype">
+                            <option value="match_all" selected>Match All</option>
+                            <option value="wildcard">Wildcard</option>
+                            <option value="query_string">Query String</option>
+                            <option value="prefix">Prefix</option>
+                        </select>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 	
-	<br>
-	<div id="stats_nb" style="display:inline"></div>
-	<div id="stats_nb_titre" style="display:inline"></div>
-	<div id="stats_took_debut" style="display:inline"></div>
-	<div id="stats_took" style="display:inline"></div>
+    <div class="container">
 
+        <!-- Page Navigation -->
+        <ul id="tabs" class="nav nav-tabs">
+            <li class="active"><a href="#tabs-1" data-toggle="tab">R&eacute;sultats</a></li>
+            <li><a href="#tabs-2" data-toggle="tab">JSON</a></li>
+            <li><a href="#tabs-3" data-toggle="tab">Options</a></li>
+            <li class="pull-right"><span id="wait" class="label label-info" /><span></li>
+        </ul>
 
+        <div class="tab-content">
+            <!-- Page "Résultats" -->
+            <div id="tabs-1" class="tab-pane active">
+                <div class="row-fluid">
+                    <div class="span12">
+                        <div id="chart_date"></div>
+                        <div id="chart_date_filter"></div>
+                    </div>
+                </div>
+                <div class="row-fluid">
+                    <div class="span4">
+                        <div id="chart_terms"></div>
+                        <div id="chart_terms_filter"></div>
+                    </div>
+                    <div class="span4">
+                        <div id="chart_hashtags"></div>
+                        <div id="chart_hashtags_filter"></div>
+                    </div>
+                    <div class="span4">
+                        <div id="chart_tweeters"></div>
+                        <div id="chart_tweeters_filter"></div>
+                    </div>
+                </div>
+            </div>
 
-<div id="tabs">
-	<ul>
-		<li><a href="#tabs-1">Résultats</a></li>
-		<li><a href="#tabs-2">JSon</a></li>
-		<li><a href="#tabs-3">Options</a></li>
-	</ul>
-	<div id="tabs-1">
-		<table width="100%">
-			<tr>
-				<td colspan=3><div id="chart_date" style="height:300px;width:900px; "></div></td>
-				<td width="25%" rowspan=4>&nbsp;</td>
-			</tr>
-			<tr>
-				<td colspan=3><div id="chart_date_filter"></div></td>
-			</tr>
-			<tr id="charts">
-				<td width="25%"><div id="chart_terms" style="height:300px; width:300px;"></div></td>
-				<td width="25%"><div id="chart_hashtags" style="height:300px; width:300px;"></div></td>
-				<td width="25%"><div id="chart_tweeters" style="height:300px; width:300px;"></div></td>
+            <!-- Page "JSON" -->
+            <div id="tabs-2" class="tab-pane">
+                <div class="accordion">
+                    <div class="accordion-group">
+                        <div class="accordion-heading">
+                            <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#jsonRequest">
+                                JSON Request
+                            </a>
+                        </div>
+                        <div id="jsonRequest" class="accordion-body collapse">
+                            <div class="accordion-inner">
+                                <div id="jsonin"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion">
+                    <div class="accordion-group">
+                        <div class="accordion-heading">
+                            <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#jsonResponse">
+                                JSON Response
+                            </a>
+                        </div>
+                        <div id="jsonResponse" class="accordion-body collapse in">
+                            <div class="accordion-inner">
+                                <div id="jsonout"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-			</tr>
-			<tr>
-				<td><div id="chart_terms_filter"></div></td>
-				<td><div id="chart_hashtags_filter"></div></td>
-				<td><div id="chart_tweeters_filter"></div></td>
-			</tr>
-			<tr>
-				<td colspan="4">
-					<table id="talks"></table>
-				</td>
-			</tr>
-		</table>
-	</div>
-	<div id="tabs-2">
-		<table width="100%">
-			<tr id="json" valign="top">
-				<td width="40%" bgcolor="#F0F0F0"><div id="jsonin"></div></td>
-				<td><div id="jsonout"></div></td>
-			</tr>
-		</table>
-	</div>
-	<div id="tabs-3">
-		<p>
-			<select id="esNode">
-				<option value="http://es-twitter.dyndns.org/">Node 1</option>
-				<option value="http://es2-twitter.dyndns.org/">Node 2</option>
-				<option value="http://localhost:9200/" selected>Localhost</option>
-			</select>
-		</p>
+            <!-- Page "Options" -->
+            <div id="tabs-3" class="tab-pane">
+                <form class="form-horizontal">
+                    <legend>Options</legend>
+                    <div class="control-group">
+                        <label class="control-label" for="esNode">Elasticsearch node</label>
+                        <div class="controls">
+                            <select id="esNode">
+                                <option value="http://es-twitter.dyndns.org/">Node 1</option>
+                                <option value="http://es2-twitter.dyndns.org/">Node 2</option>
+                                <option value="http://localhost:9200/" selected>Localhost</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label" for="refreshrate">Mise à jour toutes les</label>
+                        <div class="controls">
+                            <input type="text" id="refreshrate"> secondes
+                        </div>
+                    </div>
+                </form>
+                <form class="form-horizontal">
+                    <legend>Cheat codes ;-)</legend>
+                    <ul>
+                        <li>+user.screen_name:dadoonet
+                        <li>"devoxxfr dadoonet"~5
+                    </ul>
+                </form>
+            </div>
 
-		<p>
-			<label for="refreshrate">Mise à jour toutes les :</label>
-			<input type="text" id="refreshrate" style="border:0; color:#f6931f; font-weight:bold;" readonly />
-		</p>
-		<div id="slider"></div>
-		<p>
-		Cheat codes ;-) : 
-		<ul>
-			<li>+user.screen_name:dadoonet
-			<li>"devoxxfr dadoonet"~5
-		</ul>
-		</p>
-	</div>
+        </div>
 
-</div>
-	
-		
-<div id="devoxx" class="logo">
-<a href="http://www.devoxx.fr"><img src="http://www.devoxx.fr/download/attachments/5342010/465x60_anime.gif?version=2&modificationDate=1323625564000"></a>
-</div>
-		
-<div id="dialog-message" title="Tweet detail">
-	<div id="talkdetails"></div>
-</div>	
-
+    </div>
 </body>
 </html>
