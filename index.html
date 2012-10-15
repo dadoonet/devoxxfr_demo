@@ -310,9 +310,12 @@
 	}
 
 	function showStats(total, took) {
+        var spanTotal = $('<span>' + total + '</span>').formatNumber({format:"#,###", locale:"fr"});
+        var spanTook = $('<span>' + took + '</span>').formatNumber({format:"#,###", locale:"fr"});
+
 		$("#wait")
             .removeClass('label-info')
-            .text(total + ' éléments trouvés en ' + took + ' ms.')
+            .text(spanTotal.text() + ' éléments trouvés en ' + spanTook.text() + ' ms.')
             .show();
 	}
 
