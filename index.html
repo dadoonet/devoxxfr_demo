@@ -339,8 +339,9 @@
 	}
 
 	var sES = "http://localhost:9200/";
-
-	//
+    var esIndex = "devoxx";
+	
+    //
 	// JQuery START FUNCTION
 	//
 	$( function() { 
@@ -514,7 +515,7 @@
 								"from" : es_from, "size" : es_size,
 								"sort" : [
 									"_score",
-									{ "created_at" : {"order" : "desc"} }
+									{ "created_at" : {"order" : "desc", "missing" : "_last"} }
 								],
 								"query" : { 
 									"filtered" : {
@@ -534,7 +535,7 @@
 			$('#jsonin').html( "<pre>" + esCall + "</pre>" );
 
    
-           $.ajax({   url: sES + '/devoxx/_search?pretty=true'
+           $.ajax({   url: sES + '/' + esIndex + '/_search?pretty=true'
                      , type: 'POST'
                      , data : esCall
                      , dataType : 'json'
