@@ -12,6 +12,10 @@
         body {
             padding-top: 60px;
         }
+        
+        #tabs-1 {
+        	text-align: center;
+        }
     </style>
 
     <!-- Load JS libraries -->
@@ -219,7 +223,7 @@
  			 $( filterLegend ).unbind('click');
 
 			 $( filterLegend )
-				.text(dtLabel[dtFilterLevel])
+				.html('<span class="label label-important">'+dtLabel[dtFilterLevel]+'</span>')
 				.click(function() {
 					dtFilterLevel--;
 
@@ -244,7 +248,7 @@
 					// Suppression du filtre
 					removeFilter(filtername);
 					if (dtFilterLevel > 0) {
-						$( filterLegend ).text(dtLabel[dtFilterLevel]);
+						$( filterLegend ).html('<span class="label label-important">'+dtLabel[dtFilterLevel]+'</span>');
 						addDateFilter(filtername, dtFilter[dtFilterLevel]);
 					} else {
 						// On bloque au niveau 0
@@ -283,7 +287,7 @@
 						if(data[0] != "Autres"){
 							filterLegend = "#" + divname + "_filter";
 							$( filterLegend )
-								.text(data[0])
+								.html('<span class="label label-important">'+data[0]+'</span>')
 								.click(function() {
 									removeFilter(filtername);
 									filterLegend = "#" + divname + "_filter";
@@ -341,6 +345,14 @@
 	// var sES = "http://localhost:9200/";
 	var sES = "http://es-twitter.dyndns.org/";
 	
+	var delay = (function(){
+		  var timer = 0;
+		  return function(callback, ms){
+		    clearTimeout (timer);
+		    timer = setTimeout(callback, ms);
+		  };
+		})();	
+
 	//
 	// JQuery START FUNCTION
 	//
@@ -353,16 +365,18 @@
 		$( "#refreshrate" ).val("5");
 
 		$( "#searchterm" ).keyup (function(event) {
-				var google = $( "#searchterm" ).val();
-				var searchtype = $( "#searchtype" ).val();
-				// If user enter something and is in match_all mode, we send him to
-				// query_string
-				if (google != null && google != "" && searchtype == "match_all") {
-					searchtype = "query_string";
-					$("#searchtype").val(searchtype);
-				}
-				compute_data();
-				return true;
+			delay(function(){
+					var google = $( "#searchterm" ).val();
+					var searchtype = $( "#searchtype" ).val();
+					// If user enter something and is in match_all mode, we send him to
+					// query_string
+					if (google != null && google != "" && searchtype == "match_all") {
+						searchtype = "query_string";
+						$("#searchtype").val(searchtype);
+					}
+					compute_data();
+					return true;
+			    }, 500 );
 			}
 		);
 
@@ -389,7 +403,7 @@
 
 	});
 
-	var bacthId = window.setInterval(batchUpdate, 5000);
+	var bacthId = window.setInterval(batchUpdate, 30000);
 	function batchUpdate() {
         // Only if Resultats is the tab shown
         if($('#tabs li:first').hasClass('active')){
@@ -560,6 +574,7 @@
 					$('#chart_hashtags').text( "" );
 					$('#jsonout').text( "" );
 					
+                    $("#tweets > tbody tr").remove();
 					$('#talkdetails').text( "" );
 					if (jqpChart_terms != null) {
 						jqpChart_terms.destroy();
@@ -569,6 +584,9 @@
 					}
 					if (jqpChart_tweeters != null) {
 						jqpChart_tweeters.destroy();
+					}
+					if (jqpChart_date != null) {
+						jqpChart_date.destroy();
 					}
 				} else {
 					if (jqpChart_terms != null) {
@@ -656,8 +674,11 @@
             <li class="active"><a href="#tabs-1" data-toggle="tab">R&eacute;sultats</a></li>
             <li><a href="#tabs-2" data-toggle="tab">JSON</a></li>
             <li><a href="#tabs-3" data-toggle="tab">Options</a></li>
-            <li class="pull-right"><span id="wait" class="label"></span></li>
+            <li class="pull-right"><span id="wait" class="label"></span>&nbsp;<a href="https://twitter.com/share" 
+            data-text="Realtime Tweet Analysis for #jug with #elasticsearch" data-via="dadoonet" data-url="http://devoxx2012.pilato.fr/"
+            data-related="dadoonet:David Pilato,elasticsearchfr:Elasticsearch France,elasticsearch:Elasticsearch" class="twitter-share-button" data-lang="en">Tweet</a></li>
         </ul>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
         
         <div class="tab-content">
             <!-- Page "Résultats" -->
@@ -741,10 +762,9 @@
                         <label class="control-label" for="esNode">Elasticsearch node</label>
                         <div class="controls">
                             <select id="esNode">
-                                <option value="http://es-twitter.dyndns.org/">Node 1</option>
-                                <option value="http://es2-twitter.dyndns.org/">Node 2</option>
-                                <option value="http://localhost:9200/" selected>Localhost</option>
-                            </select>
+                                <option value="http://es-twitter.dyndns.org/" selected>Node 1</option>
+                                <option value="http://localhost:9200/">Localhost</option>
+                             </select>
                         </div>
                     </div>
                     <div class="control-group">
@@ -753,13 +773,6 @@
                             <input type="text" id="refreshrate"> secondes
                         </div>
                     </div>
-                </form>
-                <form class="form-horizontal">
-                    <legend>Cheat codes ;-)</legend>
-                    <ul>
-                        <li>+user.screen_name:dadoonet
-                        <li>"devoxxfr dadoonet"~5
-                    </ul>
                 </form>
             </div>
 
