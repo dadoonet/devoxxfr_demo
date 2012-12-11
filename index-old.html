@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>JUG Elasticsearch Twitter Demo</title>
+    <title>Twitter River Demo</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="description" content="JUG Elasticsearch Twitter Demo">
-    <meta name="author" content="David Pilato (david@pilato.fr)">
+    <meta name="description" content="A demo page for ElasticSearch Twitter River, please check https://github.com/dadoonet/devoxxfr_demo for more information.">
+    <meta name="author" content="David Pilato (david@pilato.fr), Tanguy Leroux (tlrx.dev@gmail.com)">
 
     <!-- CSS -->
     <link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
@@ -21,25 +21,30 @@
     <!-- Load JS libraries -->
     <script type="text/javascript" language="javascript" src="lib/jquery-1.7.1.min.js"></script>
     <script type="text/javascript" language="javascript" src="lib/bootstrap/js/bootstrap.min.js"></script>
-	<script src="lib/highcharts/highcharts.js"></script>
-	<script src="lib/highcharts/modules/exporting.js"></script>
-	<script src="lib/highcharts/themes/gray.js"></script>
 
+
+
+<link rel="stylesheet" type="text/css" href="css/jquery.jqplot.min.css" />
 <link rel="stylesheet" type="text/css" href="css/ui.jqgrid.css" />
 <script type="text/javascript" language="javascript" src="lib/jquery.jqGrid.min.js"></script>
 <script type="text/javascript" language="javascript" src="lib/jquery-ui-1.8.18.custom.min.js"></script>
 <script type="text/javascript" language="javascript" src="lib/jshashtable-2.1.js"></script>
 <script type="text/javascript" language="javascript" src="lib/jquery.numberformatter-1.2.2.jsmin.js"></script>
+<script type="text/javascript" language="javascript" src="lib/date-fr-FR.js"></script>
+
+<script type="text/javascript" language="javascript" src="lib/jquery.jqplot.min.js"></script>
+<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.pieRenderer.min.js"></script>
+<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.pointLabels.min.js"></script>
+<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.dateAxisRenderer.min.js"></script>
+<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.barRenderer.min.js"></script>
+<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.categoryAxisRenderer.min.js"></script>
+<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.ohlcRenderer.min.js"></script>
+<script type="text/javascript" language="javascript" src="lib/plugins/jqplot.highlighter.min.js"></script>	
 
     <script>
     $.support.cors = true;
 
-
-	function dateFmt (cellvalue, format) {
-	   return  Highcharts.dateFormat(format, new Date(cellvalue));
-	}
-	
- 	/*
+	/*
 	 * Transform a term facet collection to an array of values
 	 */
 	function termsToArray(facet) {
@@ -64,22 +69,25 @@
 	 */
 	function histoToArray(facet) {
 		s = [];
+
 		for (i=0; i < facet.length; i++) {
-			s[i] = [facet[i].time, facet[i].count];
+			s[i] = [new Date(facet[i].time), facet[i].count];
 		}
+
+
 		return s;
 	}
 
 	var dateHistogramTitle = function(first, last) {
-		var formatter = '%d/%m/%y';
+		var formatter = 'dddd, MMMM d, yyyy';
 
-		if (dtFilterLevel == 0) formatter = '%m/%y';
-		if (dtFilterLevel == 1) formatter = '%d/%m/%y';
-		if (dtFilterLevel == 2) formatter = '%d/%m/%y %H';
-		if (dtFilterLevel >= 3) formatter = '%d/%m/%y %M';
+		if (dtFilterLevel == 0) formatter = 'MM/yyyy';
+		if (dtFilterLevel == 1) formatter = 'dd/MM/yyyy';
+		if (dtFilterLevel == 2) formatter = 'dd/MM/yyyy HH';
+		if (dtFilterLevel >= 3) formatter = 'dd/MM/yyyy HH:mm';
 
-		strDateDeb = dateFmt(first, formatter);
-		strDateFin = dateFmt(last, formatter);
+		strDateDeb = first.toString(formatter);
+		strDateFin = last.toString(formatter);
 
 		if (dtFilterLevel == 2) {
 			strDateDeb += "h";
@@ -94,208 +102,206 @@
 		return strRetour;
     }	
 
-	function createHistogram(divname, facet, filtername, title) {
-		var titre = dateHistogramTitle(new Date(facet[0].time),
+	function createHistogram(divname, facet, filtername) {
+		// Compute serie
+		var s1 = histoToArray(facet);
+		var title = dateHistogramTitle(new Date(facet[0].time),
 			new Date(facet[facet.length-1].time));
-		chart = new Highcharts.Chart({
-            chart: {
-                renderTo: divname,
-				zoomType: 'x'
+
+		var tickInterval;
+		var numberTicks=facet.length+2;
+		var formatDate;
+		var min=new Date(facet[0].time);
+		var max=new Date(facet[facet.length-1].time);
+		var ecartmn = (max-min)/1000/60;
+
+
+		if (dtFilterLevel == 0) {
+			min.add(-1).months();
+			max.add(1).months();
+			tickInterval='1 month';
+			formatDate='%m/%Y';
+			ecartmn=ecartmn/60/24/12;
+		}
+		if (dtFilterLevel == 1) {
+			min.add(-1).days();
+			max.add(1).days();
+			tickInterval='1 day';
+			formatDate='%d/%m';
+			ecartmn=ecartmn/60/24;
+		}
+		if (dtFilterLevel == 2) {
+			min.add(-1).hours();
+			max.add(1).hours();
+			tickInterval='1 hour';
+			formatDate='%H';
+			ecartmn=ecartmn/60;
+		}
+		if (dtFilterLevel >= 3) {
+			min.add(-1).minutes();
+			max.add(1).minutes();
+			tickInterval='1 minute';
+			formatDate='%M';
+		}
+
+		if (ecartmn != 0) {
+			barWidth = ($('#'+divname).width() - 100 )/ (ecartmn+2);
+		} else {
+			barWidth = $('#'+divname).width() - 100;
+		}
+
+		// $(divname).remove();
+		obj = $.jqplot(divname, [s1], {
+			title:title,
+			seriesDefaults:{
+				renderer:$.jqplot.BarRenderer,
+				rendererOptions: {
+					barWidth:barWidth,
+					varyBarColor:false
+				},					
 			},
-            title: {
-                text: titre
-            },
-			xAxis: {
-                type: 'datetime',
-                dateTimeLabelFormats: {
-                    month: '%b %Y',
-                    year: '%b %Y'
-                }
+			axes: {
+				// Use a category axis on the x axis and use our custom ticks.
+				xaxis: {
+					renderer:$.jqplot.DateAxisRenderer, 
+					tickOptions:{formatString:formatDate},
+					tickInterval:tickInterval,
+					numberTicks:numberTicks,
+					min:min, 
+					max:max
+				},
+				// Pad the y axis just a little so bars can get close to, but
+				// not touch, the grid boundaries.  1.2 is the default padding.
+				yaxis: {
+					tickOptions: {formatString: '%d'}
+				}
 			},
-            yAxis: {
-                title: {
-                    text: title
-                },
-				min: 0
-            },
-            tooltip: {
-                formatter: function() {
-                        return '<b>'+ this.series.name +'</b><br/>'+
-                        Highcharts.dateFormat('%b %Y', this.x) +': '+ this.y +' tweets';
-                }
-            },
-            legend: {
-                enabled: true
-            },
-    
-            plotOptions: {
-                series: {
-					animation: {
-						duration: 1000
-					},					
-                    cursor: 'pointer',
-                    point: {
-                        events: {
-                            click: function() {
-								var selectedDate = new Date(this.x);
-								 // Suivant le niveau on applique un filtre mois, jour, heure
-								dtFilterLevel++;
+		   cursor: {
+			   showTooltip:true
+		   }
+		});
+		obj.replot();
 
-								if (dtFilterLevel == 1) {
-									// Filtre mois / Facet jour
-									facetDate = 'day';
-									dtFilter[dtFilterLevel] = dateFmt(selectedDate, "%Y-%m");
-									dtLabel[dtFilterLevel] = dateFmt(selectedDate, "%m/%Y");
-								 }
-								 if (dtFilterLevel == 2) {
-									// Filtre jour / facet heure
-									facetDate = 'hour';
-									dtFilter[dtFilterLevel] = dateFmt(selectedDate, "%Y-%m-%d");
-									dtLabel[dtFilterLevel] = dateFmt(selectedDate, "%d/%m/%Y");
-								 }
-								 if (dtFilterLevel == 3) {
-									// Filtre heure / facet minute
-									facetDate = 'minute';
-									dtFilter[dtFilterLevel] = dateFmt(selectedDate, "%Y-%m-%dT%H");
-									dtLabel[dtFilterLevel] = dateFmt(selectedDate, "%d/%m/%Y a %H h");
-								 }
-								 if (dtFilterLevel >= 4) {
-									dtFilterLevel=4;
-									// Filtre heure / facet minute
-									facetDate = 'minute';
-									dtFilter[dtFilterLevel] = dateFmt(selectedDate, "%Y-%m-%dT%H:%M");
-									dtLabel[dtFilterLevel] = dateFmt(selectedDate, "%d/%m/%Y a %H:%M");
-								 }
+		$('#'+divname).bind('jqplotDataClick', 
+			function (ev, seriesIndex, pointIndex, data) {
+             var date = new Date(facet[pointIndex].time);
 
-							
-								filterLegend = "#" + divname + "_filter";
-								 // We remove old click listeners
-								 $( filterLegend ).unbind('click');
+			 // Suivant le niveau on applique un filtre mois, jour, heure
+			dtFilterLevel++;
 
-								$( filterLegend )
-									.html('<span class="label label-important">'+dtLabel[dtFilterLevel]+'</span>')
-									.click(function() {
-										dtFilterLevel--;
+			if (dtFilterLevel == 1) {
+				// Filtre mois / Facet jour
+				facetDate = 'day';
+				dtFilter[dtFilterLevel] = date.toString("yyyy-MM");
+				dtLabel[dtFilterLevel] = date.toString("MMMM yyyy");
+			 }
+			 if (dtFilterLevel == 2) {
+				// Filtre jour / facet heure
+				facetDate = 'hour';
+				dtFilter[dtFilterLevel] = date.toString("yyyy-MM-dd");
+				dtLabel[dtFilterLevel] = date.toString("dd MMMM yyyy");
+			 }
+			 if (dtFilterLevel == 3) {
+				// Filtre heure / facet minute
+				facetDate = 'minute';
+				dtFilter[dtFilterLevel] = date.addHours(-2).toString("yyyy-MM-ddTHH");
+				dtLabel[dtFilterLevel] = date.addHours(2).toString("dd MMMM yyyy a HH")+"h";
+			 }
+			 if (dtFilterLevel >= 4) {
+				dtFilterLevel=4;
+				// Filtre heure / facet minute
+				facetDate = 'minute';
+				dtFilter[dtFilterLevel] = date.addHours(-2).toString("yyyy-MM-ddTHH:mm");
+				dtLabel[dtFilterLevel] = date.addHours(2).toString("dd MMMM yyyy a HH:mm");
+			 }
+			removeFilter(filtername);
+			addDateFilter(filtername, dtFilter[dtFilterLevel]);
 
-										// Suivant le niveau on applique un filtre mois, jour, heure
-										if (dtFilterLevel < 0) {
-											// Aucun filtre / facet mois
-											facetDate = 'month';
-										}
-										if (dtFilterLevel == 0) {
-											// Filtre mois / Facet jour
-											facetDate = 'month';
-										}
-										if (dtFilterLevel == 1) {
-											// Filtre jour / facet heure
-											facetDate = 'day';
-										}
-										if (dtFilterLevel == 2) {
-											// Filtre heure / facet minute
-											facetDate = 'hour';
-										}
+			filterLegend = "#" + divname + "_filter";
 
-										// Suppression du filtre
-										removeFilter(filtername);
-										if (dtFilterLevel > 0) {
-											$( filterLegend ).html('<span class="label label-important">'+dtLabel[dtFilterLevel]+'</span>');
-											addDateFilter(filtername, dtFilter[dtFilterLevel]);
-										} else {
-											// On bloque au niveau 0
-											dtFilterLevel = 0;
-											$( filterLegend ).text("");
-										}
-										// Simulate a keyup event
-										batchUpdate();
-									});
+ 			 // We remove old click listeners
+ 			 $( filterLegend ).unbind('click');
 
-								addDateFilter(filtername, dtFilter[dtFilterLevel]);
-								batchUpdate();
-							}
-                        },
-						column: {
-							allowPointSelect: true,
-							cursor: 'pointer',
-							dataLabels: {
-								enabled: false
-							},
-							showInLegend: true
-						}					
-                    },
-                    marker: {
-                        lineWidth: 1
-                    }
-                }
-            },
-    
-            series: [{
-				type: 'column',
-                name: title,
-                data: histoToArray(facet)
-            }]
-        });
+			 $( filterLegend )
+				.html('<span class="label label-important">'+dtLabel[dtFilterLevel]+'</span>')
+				.click(function() {
+					dtFilterLevel--;
 
-		return chart;
-	}	
-	
-	function createHiPie(divname, title, facet, filtername) {
+					// Suivant le niveau on applique un filtre mois, jour, heure
+					if (dtFilterLevel < 0) {
+						// Aucun filtre / facet mois
+						facetDate = 'month';
+					}
+					if (dtFilterLevel == 0) {
+						// Filtre mois / Facet jour
+						facetDate = 'month';
+					}
+					if (dtFilterLevel == 1) {
+						// Filtre jour / facet heure
+						facetDate = 'day';
+					}
+					if (dtFilterLevel == 2) {
+						// Filtre heure / facet minute
+						facetDate = 'hour';
+					}
+
+					// Suppression du filtre
+					removeFilter(filtername);
+					if (dtFilterLevel > 0) {
+						$( filterLegend ).html('<span class="label label-important">'+dtLabel[dtFilterLevel]+'</span>');
+						addDateFilter(filtername, dtFilter[dtFilterLevel]);
+					} else {
+						// On bloque au niveau 0
+						dtFilterLevel = 0;
+						$( filterLegend ).text("");
+					}
+
+					batchUpdate();
+				});
+
+			batchUpdate();
+			}
+		);
+		return obj;
+	}
+
+	function createPie(divname, title, facet, filtername) {
 		if (termsToArray(facet).length != 0) {
-			obj = new Highcharts.Chart({
-				chart: {
-					renderTo: divname
-				},
-				title: {
-					text: title
-				},
-				tooltip: {
-					pointFormat: '{series.name}: <b>{point.percentage}%</b> ({point.y})',
-					percentageDecimals: 1
-				},
-				plotOptions: {
-					series: {
-						animation: {
-							duration: 1000 
-						},					
-						cursor: 'pointer',
-						point: {
-							events: {
-								click: function() {
-									filterLegend = "#" + divname + "_filter";
-									$( filterLegend )
-										.html('<span class="label label-important">'+this.name+'</span>')
-										.click(function() {
-											removeFilter(filtername);
-											filterLegend = "#" + divname + "_filter";
-											$( filterLegend ).text("");
-											// Simulate a keyup event
-											batchUpdate();
-										});
-
-									addFilter(filtername, this.name) ;
-									batchUpdate();
-								}
-							}
-						},
-						marker: {
-							lineWidth: 1
-						}
-					},
-					pie: {
-						allowPointSelect: true,
-						cursor: 'pointer',
-						dataLabels: {
-							enabled: false
-						},
-						showInLegend: true
+			$(divname).empty();
+			obj = $.jqplot(divname, [termsToArray(facet)], {
+				title:title,
+				seriesDefaults:{
+					renderer:$.jqplot.PieRenderer,
+					rendererOptions:{
+						sliceMargin: 4,
+						startAngle: 0,
+						showDataLabels: true
 					}
 				},
-				series: [{
-					type: 'pie',
-					name: 'Pourcentage',
-					data: termsToArray(facet)
-				}]
+				legend: { show:true, location: 'e' }
 			});
+			obj.replot();
 
+			jQuery('#'+divname).bind('jqplotDataClick', 
+					function (ev, seriesIndex, pointIndex, data) {
+						if(data[0] != "Autres"){
+							filterLegend = "#" + divname + "_filter";
+							$( filterLegend )
+								.html('<span class="label label-important">'+data[0]+'</span>')
+								.click(function() {
+									removeFilter(filtername);
+									filterLegend = "#" + divname + "_filter";
+									$( filterLegend ).text("");
+									// Simulate a keyup event
+									$( "#searchterm" ).trigger('keyup');
+								});
+
+							addFilter(filtername, data[0]) ;
+						}
+
+						batchUpdate();
+					}
+			);
 			return obj;
 		}
 	}
@@ -313,17 +319,13 @@
 
 		$("#wait")
             .removeClass('label-info')
-            .removeClass('label-warning')
             .text(spanTotal.text() + ' éléments trouvés en ' + spanTook.text() + ' ms.')
             .show();
-
 	}
-	function showError(text) {
-		$("#wait")
-            .removeClass('label-info')
-            .addClass('label-warning')
-            .text('Query incorrecte')
-            .show();
+
+
+	function hideLoading() {
+		$("#wait").fadeOut(1000);
 	}
 
 	function compute_data() {
@@ -351,56 +353,41 @@
 		  };
 		})();	
 
-	var bacthId = window.setInterval(batchUpdate, 60000);
-	function batchUpdate() {
-        // Only if Resultats is the tab shown
-        if($('#tabs li:first').hasClass('active')){
-    		$( "#searchterm" ).trigger('keyup');        
-        }
-	}
-
-	var oldgoogle = "dummy";
-
 	//
 	// JQuery START FUNCTION
 	//
 	$( function() { 
+		$.jqplot.config.enablePlugins = true;
+
 		$( "#dialog:ui-dialog" ).dialog( "destroy" );
 
 		$( "#tabs" ).tabs();
-		$( "#refreshrate" ).val("60");
+		$( "#refreshrate" ).val("5");
 
 		$( "#searchterm" ).keyup (function(event) {
 			delay(function(){
-					launchQuery();
+					var google = $( "#searchterm" ).val();
+					var searchtype = $( "#searchtype" ).val();
+					// If user enter something and is in match_all mode, we send him to
+					// query_string
+					if (google != null && google != "" && searchtype == "match_all") {
+						searchtype = "query_string";
+						$("#searchtype").val(searchtype);
+					}
+					compute_data();
 					return true;
 			    }, 500 );
 			}
 		);
 
-		var launchQuery = function(){
-				var google = $( "#searchterm" ).val();
-				oldgoogle = $( "#searchterm" ).val();
-				var searchtype = $( "#searchtype" ).val();
-				// If user enter something and is in match_all mode, we send him to
-				// query_string
-				if (google != null && google != "" && searchtype == "match_all") {
-					searchtype = "query_string";
-					$("#searchtype").val(searchtype);
-				}
-				compute_data();
-				return true;
-			};	
-			
 		$( "#searchtype" ).change (function(event) {
 				compute_data();
 				return true;
 			}
 		);
-	
+
 		$( "#esNode" ).change (function(event) {
 				sES = $( "#esNode" ).val();
-				$( "#searchterm" ).trigger('keyup');
 				return true;
 			}
 		);
@@ -416,9 +403,13 @@
 
 	});
 
-
-	
-	
+	var bacthId = window.setInterval(batchUpdate, 30000);
+	function batchUpdate() {
+        // Only if Resultats is the tab shown
+        if($('#tabs li:first').hasClass('active')){
+    		$( "#searchterm" ).trigger('keyup');        
+        }
+	}
 	// Initialisation des filtres par défaut
 	var filters = { "match_all" : { } };
 	var es_from = 0;
@@ -426,6 +417,7 @@
 	var dtFilterLevel = 0;
 	var dtFilter=new Array();;
 	var dtLabel=new Array();
+
 	var facetDate = 'month';
 
 	function addDateFilter(cle, dt) {
@@ -526,10 +518,10 @@
 		}
 	}
 
-	var hiChart_hashtags;
-	var hiChart_mention;
-	var hiChart_tweeters;
-	var hiChart_date;
+	var jqpChart_terms;
+	var jqpChart_hashtags;
+	var jqpChart_tweeters;
+	var jqpChart_date;
 
 	var load_data = function(texte, searchtype) {
 			generateQuery(texte, searchtype);
@@ -555,101 +547,73 @@
 								}
                        }, null, 2);
 			$('#jsonin').html( "<pre>" + esCall + "</pre>" );
+
    
-			$.ajax({   url: sES + '/devoxx/_search?pretty=true'
+           $.ajax({   url: sES + '/devoxx/_search?pretty=true'
                      , type: 'POST'
                      , data : esCall
                      , dataType : 'json'
                      , processData: false
                      , success: function(json, statusText, xhr) {
 							result = json;
-                           return display_chart(texte);
+                           return display_chart();
                        }
                      , error: function(xhr, message, error) {
                            console.error("Error while loading data from ElasticSearch", message);
-						   showError(error);
+						   hideLoading();
                       }
             });
 
 
-            var display_chart = function(texte) {
+            var display_chart = function() {
 
 				// Seulement si il y a des résultats :
 				if (result.hits.total == 0) {
-                    $("#clients > tbody tr").remove();
+					$('#chart_terms').text( "" );
+					$('#chart_tweeters').text( "" );
+					$('#chart_hashtags').text( "" );
+					$('#jsonout').text( "" );
+					
+                    $("#tweets > tbody tr").remove();
 					$('#talkdetails').text( "" );
-					if (hiChart_hashtags != null && hiChart_hashtags.series[0]) {
-						hiChart_hashtags.series[0].remove(true);
+					if (jqpChart_terms != null) {
+						jqpChart_terms.destroy();
 					}
-					if (hiChart_tweeters != null && hiChart_tweeters.series[0]) {
-						hiChart_tweeters.series[0].remove(true);
+					if (jqpChart_hashtags != null) {
+						jqpChart_hashtags.destroy();
 					}
-					if (hiChart_mention != null && hiChart_mention.series[0]) {
-						hiChart_mention.series[0].remove(true);
+					if (jqpChart_tweeters != null) {
+						jqpChart_tweeters.destroy();
 					}
-					if (hiChart_date != null && hiChart_date.series[0]) {
-						hiChart_date.series[0].remove(true);
+					if (jqpChart_date != null) {
+						jqpChart_date.destroy();
 					}
 				} else {
-					if (hiChart_date == null) {
-						// We create the chart
-						hiChart_date = createHistogram('hichart_date', result.facets.days.entries, "created_at", "Tweets");
-					} else {
-						// We update data
-						hiChart_date.addSeries({
-							name: 'Tweets',
-							data: histoToArray(result.facets.days.entries),
-							type: 'column'
-						}, true);
-						
-						// If we have too many series we throw olders
-						if(hiChart_date.series.length > 1) {
-							hiChart_date.series[0].remove(true);
-						}
+					if (jqpChart_terms != null) {
+						jqpChart_terms.destroy();
 					}
-					if (hiChart_hashtags == null) {
-						// We create the chart
-						hiChart_hashtags = createHiPie('hichart_hashtags', "Tags", result.facets.hashtags, "hashtag.text");
-					} else {
-						// We update data
-						if (hiChart_hashtags.series[0]) hiChart_hashtags.series[0].remove(true);
-						hiChart_hashtags.redraw();
-						hiChart_hashtags.addSeries({
-							name: 'Pourcentage',
-							data: termsToArray(result.facets.hashtags),
-							type: 'pie'
-						}, true);
+					if (jqpChart_hashtags != null) {
+						jqpChart_hashtags.destroy();
 					}
-					if (hiChart_mention == null) {
-						// We create the chart
-						hiChart_mention = createHiPie('hichart_mention', "Mentions", result.facets.mention, "mention.screen_name");
-					} else {
-						// We update data
-						if (hiChart_mention.series[0]) hiChart_mention.series[0].remove(false);
-						hiChart_mention.addSeries({
-							name: 'Pourcentage',
-							data: termsToArray(result.facets.mention),
-							type: 'pie'
-						}, false);
-						hiChart_mention.redraw();
+					if (jqpChart_tweeters != null) {
+						jqpChart_tweeters.destroy();
+					}
+					if (jqpChart_date != null) {
+						jqpChart_date.destroy();
 					}
 
-					if (hiChart_tweeters == null) {
-						// We create the chart
-						hiChart_tweeters = createHiPie('hichart_tweeters', "Tweeters", result.facets.tweeters, "user.screen_name");
-					} else {
-						// We update data
-						if (hiChart_tweeters.series[0]) hiChart_tweeters.series[0].remove(true);
-						hiChart_tweeters.redraw();
-						hiChart_tweeters.addSeries({
-							name: 'Pourcentage',
-							data: termsToArray(result.facets.tweeters),
-							type: 'pie'
-						}, true);
+					jqpChart_terms = createPie('chart_terms', "TOP 5 Mentions", result.facets.mention, "mention.screen_name");
+					jqpChart_hashtags = createPie('chart_hashtags', "TOP 5 Hashtags", result.facets.hashtags, "hashtag.text");
+					jqpChart_tweeters = createPie('chart_tweeters', "TOP 5 Tweeters", result.facets.tweeters, "user.screen_name");
+
+					jqpChart_date = createHistogram('chart_date', result.facets.days.entries, "created_at");
+
+					function dateFmt (cellvalue) {
+					   return  new Date(cellvalue).toString("dd/MM/yyyy HH:mm:ss");
 					}
-   
-                   // Update "clients" table
-                    $("#clients > tbody tr").remove();
+    
+                    // Update "tweets" table
+                    $("#tweets > tbody tr").remove();
 
                     if(result != null && result.hits != null && result.hits.hits != null && result.hits.hits.length > 0){
 					    for(var i=0; i <= result.hits.hits.length; i++){
@@ -660,6 +624,7 @@
                                             + '<td>' + hit._source.user.screen_name + '</td>'
                                             + '<td>' + hit._source.text + '</td>'
                                             + '<td>' + hit._score + '</td></tr>'
+
                                 var row = $(rowHtml);
                                 row.click(function() {
                                     var detailNum = $(this).attr("detail-num");
@@ -669,7 +634,7 @@
                                     }
                                 });
 
-                                $("#clients").find('tbody').append(row);
+                                $("#tweets").find('tbody').append(row);
                             }
                         }
                     }
@@ -686,8 +651,17 @@
     <div class="navbar navbar-inverse navbar-fixed-top">
         <div class="navbar-inner">
             <div class="container">
-                <a class="brand" href="#">JUG Elasticsearch Twitter Demo</a>
+                <a class="brand" href="#">Twitter River Demo</a>
                 <div class="nav-collapse collapse">
+                    <form class="navbar-form pull-right">
+                        <input class="span3" type="text" id="searchterm" placeholder="Recherche...">
+                        <select id="searchtype">
+                            <option value="match_all" selected>Match All</option>
+                            <option value="wildcard">Wildcard</option>
+                            <option value="query_string">Query String</option>
+                            <option value="prefix">Prefix</option>
+                        </select>
+                    </form>
                 </div>
             </div>
         </div>
@@ -700,7 +674,7 @@
             <li class="active"><a href="#tabs-1" data-toggle="tab">R&eacute;sultats</a></li>
             <li><a href="#tabs-2" data-toggle="tab">JSON</a></li>
             <li><a href="#tabs-3" data-toggle="tab">Options</a></li>
-            <li class="pull-right"><a href="https://twitter.com/share" 
+            <li class="pull-right"><span id="wait" class="label"></span>&nbsp;<a href="https://twitter.com/share" 
             data-text="Realtime Tweet Analysis for #jug with #elasticsearch" data-via="dadoonet" data-url="http://devoxx2012.pilato.fr/"
             data-related="dadoonet:David Pilato,elasticsearchfr:Elasticsearch France,elasticsearch:Elasticsearch" class="twitter-share-button" data-lang="en">Tweet</a></li>
         </ul>
@@ -710,38 +684,29 @@
             <!-- Page "Résultats" -->
             <div id="tabs-1" class="tab-pane active">
                 <div class="row-fluid">
-                    <div class="span9">
-						<form>
-							<input class="span12" type="text" id="searchterm" placeholder="Recherche...">
-						</form>
+                    <div class="span12">
+                        <div id="chart_date"></div>
+                        <div id="chart_date_filter"></div>
                     </div>
-                    <div class="span3">
-						<span id="wait" class="label"></span>
+                </div>
+                <div class="row-fluid">
+                    <div class="span4">
+                        <div id="chart_terms"></div>
+                        <div id="chart_terms_filter"></div>
+                    </div>
+                    <div class="span4">
+                        <div id="chart_hashtags"></div>
+                        <div id="chart_hashtags_filter"></div>
+                    </div>
+                    <div class="span4">
+                        <div id="chart_tweeters"></div>
+                        <div id="chart_tweeters_filter"></div>
                     </div>
                 </div>
                 <div class="row-fluid">
                     <div class="span12">
-                        <span id="hichart_date_filter"></span>
-                        <span id="hichart_hashtags_filter"></span>
-                        <span id="hichart_mention_filter"></span>
-                        <span id="hichart_tweeters_filter"></span>
-					</div>
-                </div>
-                <div class="row-fluid">
-					<div id="hichart_date" class="span12"></div>
-                </div>
-                <div class="row-fluid">
-                    <div class="span12"></div>
-                </div>
-                <div class="row-fluid">
-					<div id="hichart_hashtags" class="span4"></div>
-					<div id="hichart_mention" class="span4"></div>
-					<div id="hichart_tweeters" class="span4"></div>
-                </div>
-               <div class="row-fluid">
-                    <div class="span12">
-                        <h2>Clients</h2>
-                        <table id="clients" class="table table-bordered table-condensed">
+                        <h2>Tweets</h2>
+                        <table id="tweets" class="table table-bordered table-condensed">
                             <thead>
                                 <tr>
                                     <th>Date</th>
@@ -756,6 +721,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- Page "JSON" -->
             <div id="tabs-2" class="tab-pane">
                 <div class="accordion">
@@ -787,7 +753,8 @@
                     </div>
                 </div>
             </div>
-			<!-- Page "Options" -->
+
+            <!-- Page "Options" -->
             <div id="tabs-3" class="tab-pane">
                 <form class="form-horizontal">
                     <legend>Options</legend>
@@ -808,20 +775,12 @@
                     </div>
                 </form>
             </div>
-			<div id="tabs-4" class="tab-pane">
-				<select id="searchtype">
-					<option value="match_all" selected>Match All</option>
-					<option value="wildcard">Wildcard</option>
-					<option value="query_string">Query String</option>
-					<option value="prefix">Prefix</option>
-				</select>
-				<input type="checkbox" id="liveupdate"> Live update
-            </div>
 
+            <!-- Detail of a Tweet -->
             <div id="detail" class="modal hide fade">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h3>D&eacute;tail du client</h3>
+                    <h3>D&eacute;tail du tweet</h3>
                 </div>
                 <div class="modal-body">
                 </div>
