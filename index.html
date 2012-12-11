@@ -120,8 +120,24 @@
             },
             tooltip: {
                 formatter: function() {
-                        return '<b>'+ this.series.name +'</b><br/>'+
-                        Highcharts.dateFormat('%b %Y', this.x) +': '+ this.y +' tweets';
+					var texteTooltip;
+					if (dtFilterLevel == 1) {
+						texteTooltip = dateFmt(this.x, "%d/%m/%Y");
+					 } else
+					 if (dtFilterLevel == 2) {
+						texteTooltip = dateFmt(this.x, "%d/%m/%Y a %H h");
+					 } else
+					 if (dtFilterLevel == 3) {
+						texteTooltip = dateFmt(this.x, "%d/%m/%Y a %H:%M");
+					 } else
+					 if (dtFilterLevel >= 4) {
+						texteTooltip = dateFmt(this.x, "%d/%m/%Y a %H:%M:%S");
+					 } else {
+						texteTooltip = dateFmt(this.x, "%m/%Y");
+					 }
+
+					return '<b>'+ this.series.name +'</b><br/>'+
+                        texteTooltip +': '+ this.y +' tweets';
                 }
             },
             legend: {
@@ -590,6 +606,12 @@
 					if (hiChart_date != null && hiChart_date.series[0]) {
 						hiChart_date.series[0].remove(true);
 					}
+					if (hiChart_date != null) {
+						// TODO Update Title
+						// hiChart_date.setTitle("No data");
+						// var titre = dateHistogramTitle(new Date(facet[0].time),
+						// 	new Date(facet[facet.length-1].time));
+					}
 				} else {
 					if (hiChart_date == null) {
 						// We create the chart
@@ -601,6 +623,14 @@
 							data: histoToArray(result.facets.days.entries),
 							type: 'column'
 						}, true);
+						
+						// TODO Update Title
+						// hiChart_date.setTitle("No data");
+						var facet = result.facets.days.entries;
+						var titre = dateHistogramTitle(new Date(facet[0].time),
+						 	new Date(facet[facet.length-1].time));
+						// alert(titre);
+						// hiChart_date.setTitle(titre);
 						
 						// If we have too many series we throw olders
 						if(hiChart_date.series.length > 1) {
