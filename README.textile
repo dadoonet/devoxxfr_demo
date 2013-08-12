@@ -1,3 +1,8 @@
+h1. Deprecated Project
+
+This project is now fully running using Kibana.
+See new repository: https://github.com/dadoonet/kibana-twitter-demo
+
 h1. Elasticsearch Twitter Demo for Devoxx France
 
 Welcome to the Twitter Demo for Devoxx France 
